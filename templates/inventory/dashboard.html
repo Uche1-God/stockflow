@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockFlow &bull; Inventory Manager</title>
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --sidebar-width: 240px;
+        }
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #f8f9fa;
+        }
+        .wrapper {
+            display: flex;
+            flex: 1;
+        }
+        #sidebar {
+            width: var(--sidebar-width);
+            min-width: var(--sidebar-width);
+            background-color: #212529;
+            color: #fff;
+            transition: all 0.3s;
+        }
+        #sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.75);
+        }
+        #sidebar .nav-link:hover, #sidebar .nav-link.active {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        main {
+            flex: 1;
+            padding: 1.5rem;
+        }
+        footer {
+            margin-top: auto;
+        }
+        .btn-icon {
+            padding: 0.15rem 0.45rem;
+        }
+        @media (max-width: 767.98px) {
+            #sidebar {
+                margin-left: calc(-1 * var(--sidebar-width));
+            }
+            #sidebar.show {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header / Navbar -->
+    <header class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top border-bottom border-secondary">
+        <div class="container-fluid">
+            <button class="btn btn-outline-light d-md-none me-2" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar" aria-controls="sidebar" aria-expanded="false" aria-label="Toggle navigation">
+                <i class="bi bi-list"></i>
+            </button>
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="bi bi-box-seam me-2"></i>StockFlow
+            </a>
+            <div class="ms-auto d-flex align-items-center text-light">
+                <small class="me-3 d-none d-sm-inline">Small Biz Store</small>
+                <i class="bi bi-person-circle fs-5"></i>
+            </div>
+        </div>
+    </header>
+
+    <div class="wrapper">
+        <!-- Sidebar Navigation -->
+        <nav id="sidebar" class="collapse d-md-block border-end border-secondary">
+            <div class="p-3">
+                <ul class="nav nav-pills flex-column mb-auto">
+                    <li class="nav-item">
+                        <a href="#dashboard" class="nav-link active" data-bs-toggle="pill">
+                            <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#products" class="nav-link" data-bs-toggle="pill">
+                            <i class="bi bi-tags me-2"></i> Products
+                        </a>
+                    </li>
+                </ul>
+                <hr class="text-secondary">
+                <div class="small text-muted">
+                    <p class="mb-1"><strong>Status:</strong> <span id="api-status">Checking...</span></p>
+                    <p class="mb-0"><strong>Role:</strong> Manager</p>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main>
+            <div class="container-fluid">
+
+                <div id="alert-box" class="alert d-none" role="alert"></div>
+
+                <!-- Dashboard Section -->
+                <section class="mb-4">
+                    <h2 class="h4 mb-3">Dashboard</h2>
+                    <div class="row g-3">
+                        <div class="col-12 col-sm-6 col-lg-3">
+                            <div class="card border-0 shadow-sm text-center p-3">
+                                <span class="text-muted small fw-semibold">TOTAL PRODUCTS</span>
+                                <h3 class="mb-0 mt-2" id="metric-total-products">0</h3>
+                            </div>
+                        </div>
+                        <div class="col-12 col-sm-6 col-lg-3">
+                            <div class="card border-0 shadow-sm text-center p-3">
+                                <span class="text-muted small fw-semibold">CURRENT STOCK</span>
+                                <h3 class="mb-0 mt-2" id="metric-current-stock">0</h3>
+                            </div>
+                        </div>
+                        <div class="col-12 col-sm-6 col-lg-3">
+                            <div class="card border-0 shadow-sm text-center p-3 border-start border-danger border-4">
+                                <span class="text-muted small fw-semibold">LOW STOCK ITEMS</span>
+                                <h3 class="mb-0 mt-2 text-danger" id="metric-low-stock">0</h3>
+                            </div>
+                        </div>
+                        <div class="col-12 col-sm-6 col-lg-3">
+                            <div class="card border-0 shadow-sm text-center p-3">
+                                <span class="text-muted small fw-semibold">TOTAL STOCK VALUE</span>
+                                <h3 class="mb-0 mt-2" id="metric-total-value">$0.00</h3>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="row g-4">
+                    <!-- Add Product Form -->
+                    <div class="col-12 col-lg-4">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white fw-bold py-3">
+                                Add New Product
+                            </div>
+                            <div class="card-body">
+                                <form id="add-product-form" novalidate>
+                                    <div class="mb-3">
+                                        <label for="productName" class="form-label">Product Name</label>
+                                        <input type="text" class="form-control" id="productName" required>
+                                        <div class="invalid-feedback" id="err-name"></div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="productCategory" class="form-label">Category</label>
+                                        <input type="text" class="form-control" id="productCategory" placeholder="e.g., Electronics, Apparel" required>
+                                        <div class="invalid-feedback" id="err-category"></div>
+                                    </div>
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-6">
+                                            <label for="productQuantity" class="form-label">Quantity</label>
+                                            <input type="number" class="form-control" id="productQuantity" min="0" required>
+                                            <div class="invalid-feedback" id="err-quantity"></div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="productPrice" class="form-label">Price ($)</label>
+                                            <input type="number" step="0.01" class="form-control" id="productPrice" min="0" required>
+                                            <div class="invalid-feedback" id="err-price"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="productThreshold" class="form-label">Low-Stock Threshold</label>
+                                        <input type="number" class="form-control" id="productThreshold" min="0" value="5" required>
+                                        <div class="invalid-feedback" id="err-threshold"></div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100" id="submit-btn">Add Product</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Products Table -->
+                    <div class="col-12 col-lg-8">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white fw-bold py-3">
+                                Products Inventory
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Category</th>
+                                            <th>Quantity</th>
+                                            <th>Price</th>
+                                            <th>Status</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="inventory-table-body">
+                                        <!-- Dynamic items render here -->
+                                    </tbody>
+                                </table>
+                                <p id="empty-state" class="text-muted text-center py-4 mb-0 d-none">No products yet. Add your first one on the left.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-top py-3 text-center text-muted small">
+        <div class="container-fluid">
+            &copy; 2026 StockFlow MVP &bull; Django-backed
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Frontend logic wired to the Django REST-style API -->
+    <script>
+        const API_BASE = "{% url 'inventory:products_list' %}"; // e.g. /api/products/
+
+        function getCookie(name) {
+            const match = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+            return match ? decodeURIComponent(match.pop()) : '';
+        }
+        const csrftoken = getCookie('csrftoken');
+
+        function showAlert(message, type = 'danger') {
+            const box = document.getElementById('alert-box');
+            box.textContent = message;
+            box.className = `alert alert-${type}`;
+            box.classList.remove('d-none');
+            setTimeout(() => box.classList.add('d-none'), 4000);
+        }
+
+        function setApiStatus(ok) {
+            const el = document.getElementById('api-status');
+            el.textContent = ok ? 'Online' : 'Offline';
+            el.className = ok ? 'text-success' : 'text-danger';
+        }
+
+        function money(n) {
+            return `$${Number(n).toFixed(2)}`;
+        }
+
+        function renderDashboard(summary) {
+            document.getElementById('metric-total-products').innerText = summary.total_products;
+            document.getElementById('metric-current-stock').innerText = summary.current_stock;
+            document.getElementById('metric-low-stock').innerText = summary.low_stock_count;
+            document.getElementById('metric-total-value').innerText = money(summary.total_value);
+        }
+
+        function renderTable(products) {
+            const tbody = document.getElementById('inventory-table-body');
+            const emptyState = document.getElementById('empty-state');
+            tbody.innerHTML = '';
+
+            if (!products.length) {
+                emptyState.classList.remove('d-none');
+                return;
+            }
+            emptyState.classList.add('d-none');
+
+            products.forEach(item => {
+                const statusBadge = item.is_low_stock
+                    ? '<span class="badge bg-danger">Low Stock</span>'
+                    : '<span class="badge bg-success">In Stock</span>';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="fw-semibold">${escapeHtml(item.name)}</td>
+                    <td><span class="badge bg-secondary">${escapeHtml(item.category)}</span></td>
+                    <td>${item.quantity}</td>
+                    <td>${money(item.price)}</td>
+                    <td>${statusBadge}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-danger btn-icon" data-id="${item.id}" title="Delete">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tr.querySelector('button').addEventListener('click', () => deleteProduct(item.id));
+                tbody.appendChild(tr);
+            });
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        async function loadInventory() {
+            try {
+                const res = await fetch(API_BASE);
+                if (!res.ok) throw new Error('Failed to load inventory');
+                const data = await res.json();
+                setApiStatus(true);
+                renderDashboard(data.summary);
+                renderTable(data.products);
+            } catch (err) {
+                setApiStatus(false);
+                showAlert('Could not reach the server. Is the Django backend running?');
+            }
+        }
+
+        function clearFieldErrors() {
+            ['name', 'category', 'quantity', 'price', 'threshold'].forEach(f => {
+                const input = document.getElementById(`product${f.charAt(0).toUpperCase()}${f.slice(1)}`);
+                const err = document.getElementById(`err-${f}`);
+                if (input) input.classList.remove('is-invalid');
+                if (err) err.textContent = '';
+            });
+        }
+
+        async function deleteProduct(id) {
+            if (!confirm('Remove this product from inventory?')) return;
+            try {
+                const res = await fetch(`${API_BASE}${id}/`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': csrftoken },
+                });
+                if (!res.ok) throw new Error('Delete failed');
+                const data = await res.json();
+                renderDashboard(data.summary);
+                loadInventory();
+            } catch (err) {
+                showAlert('Could not delete that product.');
+            }
+        }
+
+        document.getElementById('add-product-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            clearFieldErrors();
+
+            const payload = {
+                name: document.getElementById('productName').value.trim(),
+                category: document.getElementById('productCategory').value.trim(),
+                quantity: document.getElementById('productQuantity').value,
+                price: document.getElementById('productPrice').value,
+                threshold: document.getElementById('productThreshold').value,
+            };
+
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Adding...';
+
+            try {
+                const res = await fetch(API_BASE, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                if (res.status === 400) {
+                    const data = await res.json();
+                    if (data.errors) {
+                        Object.entries(data.errors).forEach(([field, message]) => {
+                            const input = document.getElementById(`product${field.charAt(0).toUpperCase()}${field.slice(1)}`);
+                            const err = document.getElementById(`err-${field}`);
+                            if (input) input.classList.add('is-invalid');
+                            if (err) err.textContent = message;
+                        });
+                    }
+                    return;
+                }
+
+                if (!res.ok) throw new Error('Add failed');
+
+                this.reset();
+                document.getElementById('productThreshold').value = 5;
+                loadInventory();
+            } catch (err) {
+                showAlert('Could not add the product. Please try again.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Add Product';
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', loadInventory);
+    </script>
+</body>
+</html>
