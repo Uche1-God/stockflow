@@ -296,15 +296,28 @@
 
         async function loadInventory() {
             try {
+                console.log("API URL:", API_BASE);
+
                 const res = await fetch(API_BASE);
-                if (!res.ok) throw new Error('Failed to load inventory');
+
+                console.log("API status:", res.status);
+                console.log("API response:", await res.clone().text());
+
+                if (!res.ok) {
+                    throw new Error(`API returned ${res.status}`);
+                }
+
                 const data = await res.json();
+
                 setApiStatus(true);
                 renderDashboard(data.summary);
                 renderTable(data.products);
+
             } catch (err) {
+                console.error("API ERROR:", err);
+
                 setApiStatus(false);
-                showAlert('Could not reach the server. Is the Django backend running?');
+                showAlert(`API error: ${err.message}`);
             }
         }
 
